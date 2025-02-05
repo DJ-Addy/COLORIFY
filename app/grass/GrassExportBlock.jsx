@@ -93,7 +93,7 @@ export default function App() {
     <div style={{ position: 'relative', width: '160vw', height: '100vh' }}>
       {/* Search Bar and Color Picker */}
       <div
-        class="Search"
+        className="Search"
         style={{
           position: "absolute",
           top: 10,
@@ -104,7 +104,7 @@ export default function App() {
         }}
       >
         <input
-          class="searchInput"
+          className="searchInput"
           type="text"
           placeholder="Enter hex code or text"
           value={inputValue}

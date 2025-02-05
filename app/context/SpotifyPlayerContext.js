@@ -8,8 +8,19 @@ export const SpotifyPlayerProvider = ({ children }) => {
   const [currentTrack, setCurrentTrack] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [deviceId, setDeviceId] = useState(null);
+  const [drmSupported, setDrmSupported] = useState(false);
+
+  // DRM Configuration
+  const drmConfig = [{
+    initDataTypes: ['cenc'],
+    audioCapabilities: [{
+      contentType: 'audio/mp4;codecs="mp4a.40.2"',
+      robustness: 'SW_SECURE_CRYPTO', // Specify robustness level
+    }],
+  }];
 
   useEffect(() => {
+    // Load Spotify Web Playback SDK
     const script = document.createElement("script");
     script.src = "https://sdk.scdn.co/spotify-player.js";
     script.async = true;
@@ -43,6 +54,17 @@ export const SpotifyPlayerProvider = ({ children }) => {
 
       newPlayer.connect();
     };
+
+    // Check for DRM support
+    navigator.requestMediaKeySystemAccess('com.widevine.alpha', drmConfig)
+      .then((mediaKeySystemAccess) => {
+        console.log("MediaKeySystemAccess granted:", mediaKeySystemAccess);
+        setDrmSupported(true);
+      })
+      .catch((error) => {
+        console.error("Failed to access MediaKeySystem:", error);
+        setDrmSupported(false);
+      });
 
     return () => {
       if (player) {
@@ -80,36 +102,6 @@ export const SpotifyPlayerProvider = ({ children }) => {
     }
   };
 
-  // Get recommendations based on color
-  const getRecommendations = async (colorFeatures) => {
-    try {
-      const accessToken = localStorage.getItem("access_token");
-      if (!accessToken) {
-        console.error("No access token available");
-        return null;
-      }
-
-      const response = await fetch("/api/py/recommend-tracks", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(colorFeatures),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.tracks;
-    } catch (error) {
-      console.error("Error getting recommendations:", error);
-      return null;
-    }
-  };
-
   // Playback controls
   const togglePlay = async () => {
     if (!player) return;
@@ -132,11 +124,11 @@ export const SpotifyPlayerProvider = ({ children }) => {
       currentTrack,
       isPlaying,
       deviceId,
+      drmSupported,
       playTrack,
-      getRecommendations,
       togglePlay,
       nextTrack,
-      previousTrack
+      previousTrack,
     }}>
       {children}
     </SpotifyPlayerContext.Provider>

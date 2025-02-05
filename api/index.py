@@ -50,6 +50,7 @@ async def recommend_tracks(audio_features: dict):
 
         headers = {"Authorization": f"Bearer {access_token}"}
         params = {
+            "access_token":access_token,
             "seed_genres": "electronic",
             "target_energy": audio_features.get("target_energy"),
             "target_danceability": audio_features.get("target_danceability"),

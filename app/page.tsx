@@ -13,59 +13,10 @@ import { useState } from "react";
 export default function Home() {
 
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-
-  // Function to generate a random string for PKCE
-  const generateRandomString = (length:number): string => {
-    const possible =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let text = "";
-    for (let i = 0; i < length; i++) {
-      text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
-  };
-
-  // Function to generate a code challenge from the code verifier
-  const generateCodeChallenge = async (codeVerifier: string):Promise<string> => {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(codeVerifier);
-    const digest = await window.crypto.subtle.digest("SHA-256", data);
-    return btoa(String.fromCharCode(...new Uint8Array(digest)))
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
-  };
-
-  const handleSpotifyLogin = async () => {
+  
+  const handleSpotifyLogin = () => {
     setIsAuthenticating(true);
-
-    const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
-    if (!clientId) {
-      console.error("Spotify Client ID is missing. Please check your environment variables.");
-      setIsAuthenticating(false);
-      return;
-    }
-    const redirectUri = "http://localhost:3000/api/auth/callback/spotify";
-    const scope =
-      "user-read-private user-read-email user-read-playback-state streaming";
-
-    const codeVerifier = generateRandomString(64);
-    const codeChallenge = await generateCodeChallenge(codeVerifier);
-
-    window.localStorage.setItem("code_verifier", codeVerifier);
-
-    const authUrl = new URL("https://accounts.spotify.com/authorize");
-    const params = {
-      response_type: "code",
-      client_id: clientId,
-      scope,
-      code_challenge_method: "S256",
-      code_challenge: codeChallenge,
-      redirect_uri: redirectUri,
-      state: codeVerifier,
-    };
-    authUrl.search = new URLSearchParams(params).toString();
-    window.location.href = authUrl.toString();
+    window.location.href = "/api/auth/login"; // Redirect to the API route
   };
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">

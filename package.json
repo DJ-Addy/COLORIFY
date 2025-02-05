@@ -22,6 +22,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "concurrently": "^9.0.1",
+    "cookies": "^0.9.1",
     "eslint": "8.41.0",
     "eslint-config-next": "13.4.4",
     "lamina": "^1.1.20",
