@@ -40,6 +40,11 @@ export default function Home() {
     setIsAuthenticating(true);
 
     const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
+    if (!clientId) {
+      console.error("Spotify Client ID is missing. Please check your environment variables.");
+      setIsAuthenticating(false);
+      return;
+    }
     const redirectUri = "http://localhost:3000/api/auth/callback/spotify";
     const scope =
       "user-read-private user-read-email user-read-playback-state streaming";
