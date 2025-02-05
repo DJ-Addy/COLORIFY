@@ -62,6 +62,7 @@ export default function Home() {
       code_challenge_method: "S256",
       code_challenge: codeChallenge,
       redirect_uri: redirectUri,
+      state: codeVerifier,
     };
     authUrl.search = new URLSearchParams(params).toString();
     window.location.href = authUrl.toString();

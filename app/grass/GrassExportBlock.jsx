@@ -139,6 +139,7 @@ export default function App() {
 
 function SceneContents({sphereColor,glowColor}) {
   const { scene,} = useThree();
+  /*const { playTrack } = useSpotify();*/
   const {  emissiveColor, glowColor:levaGlow } = useControls({
     emissiveColor: '#ffffff',
     glowColor: '#ffffff'
