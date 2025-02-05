@@ -27,6 +27,9 @@ export async function GET(request: Request) {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
+      "Authorization": "Basic " + Buffer.from(
+        `${process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
+    ).toString("base64"),
     },
     body: params,
   });
@@ -36,14 +39,29 @@ export async function GET(request: Request) {
   if (data.access_token) {
     // Store the access token in a cookie
     cookies().set("access_token", data.access_token, {
-      httpOnly: true,
+      httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       maxAge: 60 * 60, // 1 hour
     });
 
     // Redirect to the home page
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    return NextResponse.redirect(`${baseUrl}/`);
+    return new Response(
+      `
+      <html>
+      <head><title>Redirecting...</title></head>
+      <body>
+        <script>
+          localStorage.setItem('access_token', '${data.access_token}');
+          window.location.href = "/";
+        </script>
+      </body>
+      </html>
+      `,
+      {
+        headers: { "Content-Type": "text/html" },
+      }
+    );
   } else {
     return NextResponse.json({ error: "Failed to retrieve access token" }, { status: 500 });
   }

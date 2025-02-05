@@ -4,6 +4,7 @@ import { createContext, useState, useEffect } from "react";
 export const SpotifyPlayerContext = createContext();
 
 export const SpotifyPlayerProvider = ({ children }) => {
+  const [accessToken, setAccessToken] = useState(null);
   const [player, setPlayer] = useState(null);
   const [currentTrack, setCurrentTrack] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -21,6 +22,17 @@ export const SpotifyPlayerProvider = ({ children }) => {
 
   useEffect(() => {
     // Load Spotify Web Playback SDK
+
+    const tokenFromCookie = document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("access_token="))
+            ?.split("=")[1];
+
+    if (tokenFromCookie) {
+            setAccessToken(tokenFromCookie);
+            localStorage.setItem("access_token", tokenFromCookie); // Sync with localStorage
+        }
+
     const script = document.createElement("script");
     script.src = "https://sdk.scdn.co/spotify-player.js";
     script.async = true;
@@ -120,6 +132,7 @@ export const SpotifyPlayerProvider = ({ children }) => {
 
   return (
     <SpotifyPlayerContext.Provider value={{
+      accessToken,
       player,
       currentTrack,
       isPlaying,

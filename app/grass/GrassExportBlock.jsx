@@ -11,6 +11,55 @@ import VisualizerBars from "./SoundWave";
 import stc from "string-to-color";
 
 
+let spotifyPlayer;
+
+const initializePlayer = (accessToken) => {
+  spotifyPlayer = new Spotify.Player({
+    name: "COLORIFY Player",
+    getOAuthToken: (cb) => cb(accessToken),
+  });
+
+  spotifyPlayer.addListener("ready", ({ device_id }) => {
+    console.log("Player is ready with device ID:", device_id);
+    localStorage.setItem("spotify_device_id", device_id);
+  });
+
+  spotifyPlayer.connect().then((success) => {
+    if (success) {
+      console.log("Spotify Player connected");
+    }
+  });
+};
+
+const playTrack = async (trackUri) => {
+  const accessToken = localStorage.getItem("access_token");
+  const deviceId = localStorage.getItem("spotify_device_id");
+
+  if (!accessToken) {
+    console.error("No access token available");
+    return;
+  }
+  if (!deviceId) {
+    console.error("No device ID available. Make sure your player is initialized and ready.");
+    return;
+  }
+
+  try {
+    await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+      method: "PUT",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        uris: [trackUri]
+      }),
+    });
+    console.log("Playback started");
+  } catch (error) {
+    console.error("Error playing track:", error);
+  }
+};
 
 
 export default function App() {
@@ -18,34 +67,37 @@ export default function App() {
   const [sphereColor, setSphereColor] = useState("#FFFFFF"); 
   const [glowColor, setGlowColor] = useState("#FFFFFF");// Default color
   const [inputValue, setInputValue] = useState(""); // Input value from the search bar
+  const [currentTrackUri, setCurrentTrackUri] = useState(null); // Dynamic track URI
   //const audioData = useAudioData();
-  const playTrack = (trackUri) => {
-    const player = new Spotify.Player({
-      name: "COLORIFY Player",
-      getOAuthToken: (cb) => cb(localStorage.getItem("access_token")),
-    });
-  
-    player.connect().then(() => {
-      player.play({
-        context_uri: trackUri,
-      });
-    });
-  };
-  // Automatically play a song when the component mounts
-  useEffect(() => {
-    const accessToken = localStorage.getItem("access_token");
-    if (accessToken) {
-      // Replace with a valid Spotify track URI
-      const trackUri = "spotify:track:4cOdK2wGLETKBW3PvgPWqT"; // Example track
-      playTrack(trackUri);
-    }
-  }, []);
-  
+ 
+useEffect(() => {
+  const accessToken = localStorage.getItem("access_token");
+  if (accessToken) {
+    initializePlayer(accessToken);
+    // Optionally, play a default track after a short delay
+    //const trackUri = "spotify:track:4cOdK2wGLETKBW3PvgPWqT"; // Example track
+    //setTimeout(() => playTrack(trackUri), 1000);
+  }
+}, []);
+useEffect(() => {
+  if (currentTrackUri) {
+    playTrack(currentTrackUri);
+  }
+}, [currentTrackUri]);
+
   
   // Handle color changes from the color picker
   const handleColorChange = async(e) => {
     const newColor = e.target.value; // Get the selected color
     setSphereColor(newColor); // Update the sphere color
+    
+    const accessToken = localStorage.getItem("access_token");
+    if (!accessToken) {
+        console.error("No access token available");
+        return;
+    }
+    
+    
     // Get color properties
     const { intensity, hue, saturation } = getColorProperties(newColor);
 
@@ -55,21 +107,28 @@ export default function App() {
       target_danceability: hue / 360, // Hue → Danceability (normalized to [0, 1])
       target_loudness: saturation * 10, // Saturation → Loudness (scaled)
     };
+    try {
+      const response = await fetch("/api/py/recommend-tracks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(spotifyParams),
+      });
 
-    // Send data to backend
-    const response = await fetch("/api/py/recommend-tracks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(spotifyParams),
-  });
+      const data = await response.json();
+      console.log("Recommended Tracks:", data.tracks);
 
-  const data = await response.json();
-  console.log("Recommended Tracks:", data.tracks);
-
-  // Play the first recommended track
-  if (data.tracks && data.tracks.length > 0) {
-    playTrack(data.tracks[0].uri); // Pass the URI of the first track
-  }
+      if (data.tracks && data.tracks.length > 0) {
+        const dynamicTrackUri = data.tracks[0].uri;
+        setCurrentTrackUri(dynamicTrackUri);
+      }
+    } catch (error) {
+      console.error("Error fetching recommendations:", error);
+    }
+    //const recommendedTrackUri = "spotify:track:RECOMMENDED_TRACK_ID"; // Replace with actual result
+    //playTrack(recommendedTrackUri);
   };
 
   // Handle input changes from the search bar
