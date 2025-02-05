@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { SpotifyPlayerContext } from "../context/SpotifyPlayerContext";
+import { SpotifyPlayerProvider } from "../context/SpotifyPlayerContext";
 
 export default function App({ Component, pageProps }) {
   return (

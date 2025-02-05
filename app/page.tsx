@@ -1,10 +1,11 @@
+"use client"; // Add this line at the top of the file
 import Image from "next/image";
 import Link from "next/link";
 import dynamic from 'next/dynamic';
 import GrassClient from './grass/GrassClient';
 import { Button } from "@/components/ui/button"
 import { useState } from "react";
-import axios from "axios";
+
 
 
 
@@ -13,15 +14,38 @@ export default function Home() {
 
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  const handleSpotifyLogin = () => {
+  // Function to generate a random string for PKCE
+  const generateRandomString = (length:number): string => {
+    const possible =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let text = "";
+    for (let i = 0; i < length; i++) {
+      text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+  };
+
+  // Function to generate a code challenge from the code verifier
+  const generateCodeChallenge = async (codeVerifier: string):Promise<string> => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(codeVerifier);
+    const digest = await window.crypto.subtle.digest("SHA-256", data);
+    return btoa(String.fromCharCode(...new Uint8Array(digest)))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+  };
+
+  const handleSpotifyLogin = async () => {
     setIsAuthenticating(true);
 
     const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
     const redirectUri = "http://localhost:3000/api/auth/callback/spotify";
-    const scope = "user-read-private user-read-email user-read-playback-state streaming";
+    const scope =
+      "user-read-private user-read-email user-read-playback-state streaming";
 
     const codeVerifier = generateRandomString(64);
-    const codeChallenge = generateCodeChallenge(codeVerifier);
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
 
     window.localStorage.setItem("code_verifier", codeVerifier);
 
@@ -46,8 +70,10 @@ export default function Home() {
           variant="outline" 
           size="sm"
           className="text-xs font-mono text-white/80 hover:text-white hover:bg-white/10 border-white/20"
+          onClick={handleSpotifyLogin} 
+          disabled={isAuthenticating}
         >
-          Connect Spotify
+          {isAuthenticating ? "Connecting..." : "Connect Spotify"}
         </Button>
 
         {/* Centered Title */}

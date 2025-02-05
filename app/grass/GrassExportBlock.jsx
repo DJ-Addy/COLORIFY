@@ -31,7 +31,15 @@ export default function App() {
       });
     });
   };
-  
+  // Automatically play a song when the component mounts
+  useEffect(() => {
+    const accessToken = localStorage.getItem("access_token");
+    if (accessToken) {
+      // Replace with a valid Spotify track URI
+      const trackUri = "spotify:track:4cOdK2wGLETKBW3PvgPWqT"; // Example track
+      playTrack(trackUri);
+    }
+  }, []);
   
   
   // Handle color changes from the color picker
